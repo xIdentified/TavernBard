@@ -1,5 +1,7 @@
-package me.xidentified.tavernbard;
+package me.xidentified.tavernbard.managers;
 
+import me.xidentified.tavernbard.*;
+import me.xidentified.tavernbard.util.MessageUtil;
 import net.citizensnpcs.api.npc.NPC;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -16,6 +18,7 @@ public class SongManager {
 
     private final TavernBard plugin;
     private final QueueManager queueManager;
+    private final EconomyManager economyManager;
     private final SongSelectionGUI songSelectionGUI;
     private final List<Song> songs;
     private boolean isSongPlaying = false;
@@ -29,10 +32,11 @@ public class SongManager {
     public SongManager(TavernBard plugin) {
         this.plugin = plugin;
         this.queueManager = new QueueManager(this.plugin, this);
+        this.economyManager = new EconomyManager(this.plugin);
         this.songs = loadSongsFromConfig();
         this.songPlayRadius = plugin.getConfig().getDouble("song-play-radius", 20.0);
         this.defaultSongDuration = plugin.getConfig().getInt("default-song-duration", 180);
-        this.songSelectionGUI = new SongSelectionGUI(this.plugin, this, bardNpc);
+        this.songSelectionGUI = new SongSelectionGUI(this.plugin, this, bardNpc, this.plugin.getMessageUtil());
     }
 
     // Reload songs from config
@@ -68,9 +72,19 @@ public class SongManager {
     public void playSongForNearbyPlayers(Player player, NPC bardNpc, Song selectedSong) {
         songStarter = player;
         this.bardNpc = bardNpc;
-        ParseConfigValues parsedDetails = new ParseConfigValues(selectedSong.getDisplayName(), selectedSong.getArtist());
-
         plugin.debugLog("Attempting to play song: " + selectedSong.getDisplayName() + " for " + (songStarter != null ? songStarter.getName() : "Unknown Player"));
+
+        // Check if economy is enabled
+        if(plugin.getConfig().getBoolean("economy.enabled")) {
+            double costPerSong = plugin.getConfig().getDouble("economy.cost-per-song");
+
+            // Check and charge the player
+            if(!economyManager.chargePlayer(player, costPerSong)) {
+                MessageUtil messageUtil = this.plugin.getMessageUtil();
+                messageUtil.sendParsedMessage(player, "<red>You do not have enough money to play a song!");
+                return;
+            }
+        }
 
         // If something is already playing, add song to queue
         if (isSongPlaying()) {

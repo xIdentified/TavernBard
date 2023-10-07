@@ -1,5 +1,10 @@
-package me.xidentified.tavernbard;
+package me.xidentified.tavernbard.listeners;
 
+import me.xidentified.tavernbard.Song;
+import me.xidentified.tavernbard.SongSelectionGUI;
+import me.xidentified.tavernbard.TavernBard;
+import me.xidentified.tavernbard.managers.SongManager;
+import me.xidentified.tavernbard.util.MessageUtil;
 import net.citizensnpcs.api.npc.NPC;
 import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -17,10 +22,12 @@ import org.bukkit.persistence.PersistentDataType;
 public class EventListener implements Listener {
     private final SongManager songManager;
     private final TavernBard plugin;
+    private final MessageUtil messageUtil;
 
-    public EventListener(TavernBard plugin, SongManager songManager) {
+    public EventListener(TavernBard plugin, SongManager songManager, MessageUtil messageUtil) {
         this.plugin = plugin;
         this.songManager = songManager;
+        this.messageUtil = messageUtil;
     }
 
     @EventHandler
@@ -91,10 +98,10 @@ public class EventListener implements Listener {
                             if (songManager.isSongPlaying()) {
                                 songManager.stopCurrentSong();
                                 player.closeInventory();
-                                player.sendMessage("§cSong ended");
+                                messageUtil.sendParsedMessage(player, "<red>Song ended");
                             }
                         } else {
-                            player.sendMessage("§cYou can only stop your own songs.");
+                            messageUtil.sendParsedMessage(player, "<red>You can only stop your own songs.");
                         }
                     }
                     default -> plugin.debugLog("Invalid action: " + action);

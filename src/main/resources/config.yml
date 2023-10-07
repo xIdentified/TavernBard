@@ -1,5 +1,6 @@
 #Tavern Bard
 #Made by xIdentified
+#MiniMessage colors supported in config
 
 #If you manage the resource pack already just set this to false, this pack has some example songs
 resource_pack:
@@ -34,5 +35,9 @@ songs:
     displayName: "The Medieval Banquet"
     artist: "Silvermansound"
     duration: 110
+
+economy:
+  enabled: false  #Do you want to use economy? (requires vault)
+  cost-per-song: 10  #Charge players to play or queue songs
 
 debug_mode: false

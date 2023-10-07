@@ -1,5 +1,8 @@
-package me.xidentified.tavernbard;
+package me.xidentified.tavernbard.managers;
 
+import me.xidentified.tavernbard.Song;
+import me.xidentified.tavernbard.TavernBard;
+import me.xidentified.tavernbard.util.MessageUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
@@ -7,6 +10,7 @@ import java.util.*;
 
 public class QueueManager {
     private final SongManager songManager;
+    private final MessageUtil messageUtil;
     protected final Queue<Song> songQueue = new LinkedList<>();
     private final int MAX_QUEUE_SIZE;
     private final Set<UUID> playersVotedToSkip = new HashSet<>();
@@ -18,6 +22,7 @@ public class QueueManager {
     public QueueManager(TavernBard plugin, SongManager songManager) {
         this.plugin = plugin;
         this.songManager = songManager;
+        this.messageUtil = plugin.getMessageUtil();
         this.MAX_QUEUE_SIZE = plugin.getConfig().getInt("max-queue-size", 10);
         long COOLDOWN_CLEANUP_PERIOD = 36000L; // 30 mins
         Bukkit.getScheduler().runTaskTimer(plugin, this::cleanupOldCooldowns, COOLDOWN_CLEANUP_PERIOD, COOLDOWN_CLEANUP_PERIOD);
@@ -28,12 +33,12 @@ public class QueueManager {
 
         if (isOnCooldown(player)) {
             plugin.debugLog("Player is on cooldown. Cannot add song to queue: " + song.getDisplayName() + " by " + player.getName());
-            player.sendMessage("§cYou need to wait before queueing another song.");
+            messageUtil.sendParsedMessage(player, "<red>You need to wait before queueing another song.");
             return;
         }
 
         if (songQueue.size() >= MAX_QUEUE_SIZE) {
-            player.sendMessage("§cThe queue is full! Please wait for a few songs to finish.");
+            messageUtil.sendParsedMessage(player, "<red>The queue is full! Please wait for a few songs to finish.");
             return;
         }
 
@@ -54,7 +59,7 @@ public class QueueManager {
     public void voteToSkip(Player player) {
 
         if (playersVotedToSkip.contains(player.getUniqueId())) {
-            player.sendMessage("§cYou have already voted to skip this song.");
+            messageUtil.sendParsedMessage(player, "<red>You have already voted to skip this song.");
             return;
         }
 
@@ -72,9 +77,9 @@ public class QueueManager {
             if (nextSong != null) {
                 songManager.playSongForNearbyPlayers(songManager.songStarter, songManager.bardNpc, nextSong);
             }
-            player.sendMessage("§aThe song has been skipped due to majority vote.");
+            messageUtil.sendParsedMessage(player, "<red>The song has been skipped due to majority vote.");
         } else {
-            player.sendMessage("§aYou have voted to skip the current song.");
+            messageUtil.sendParsedMessage(player, "<green>You have voted to skip the current song.");
         }
     }
 

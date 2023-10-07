@@ -1,8 +1,9 @@
 package me.xidentified.tavernbard;
 
+import me.xidentified.tavernbard.managers.SongManager;
+import me.xidentified.tavernbard.util.MessageUtil;
 import net.citizensnpcs.api.npc.NPC;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -12,7 +13,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
-import net.kyori.adventure.text.minimessage.MiniMessage;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,21 +24,21 @@ public class SongSelectionGUI implements InventoryHolder {
     private final TavernBard plugin;
     private final SongManager songManager;
     private final NPC bardNpc;
-    private final MiniMessage miniMessage;
-    private final LegacyComponentSerializer legacySerializer;
+    private final MessageUtil messageUtil;
     private final int ITEMS_PER_PAGE = 45;
     private int currentPage = 0;
     private final Inventory cachedGUI;
 
-    public SongSelectionGUI(TavernBard plugin, SongManager songManager, NPC bardNpc) {
+    public SongSelectionGUI(TavernBard plugin, SongManager songManager, NPC bardNpc, MessageUtil messageUtil) {
         this.plugin = plugin;
         this.songManager = songManager;
         this.bardNpc = bardNpc;
-        this.miniMessage = MiniMessage.miniMessage();
-        this.legacySerializer = LegacyComponentSerializer.legacySection();
+        this.messageUtil = messageUtil;
 
         // Initialize the cached GUI
-        this.cachedGUI = Bukkit.getServer().createInventory(this, getInventorySize(songManager.getSongs().size()), MiniMessage.miniMessage().deserialize(plugin.getConfig().getString("gui-title", "<gold>Song Selection")));
+        String guiTitle = messageUtil.getConfigMessage("gui-title", "<gold>Song Selection");
+        Component titleComponent = messageUtil.parse(guiTitle);
+        this.cachedGUI = Bukkit.getServer().createInventory(this, getInventorySize(songManager.getSongs().size()), titleComponent);
         populateCachedGUI();
     }
 
@@ -46,27 +47,17 @@ public class SongSelectionGUI implements InventoryHolder {
     }
 
     @Override
-    public Inventory getInventory() {
+    public @NotNull Inventory getInventory() {
         return getClonedGUIForPlayer();
     }
 
     public Inventory getClonedGUIForPlayer() {
-        Component title = MiniMessage.miniMessage().deserialize(plugin.getConfig().getString("gui-title", "<gold>Song Selection"));
-        Inventory playerGUI = Bukkit.createInventory(this, cachedGUI.getSize(), title);
+        String guiTitle = messageUtil.getConfigMessage("gui-title", "<gold>Song Selection");
+        Component titleComponent = messageUtil.parse(guiTitle);
+        Inventory playerGUI = Bukkit.createInventory(this, cachedGUI.getSize(), titleComponent);
         playerGUI.setContents(cachedGUI.getContents().clone());
         return playerGUI;
     }
-
-    private ParseConfigValues parseSongDetails(String displayName, String artist) {
-        Component displayNameComponent = miniMessage.deserialize(displayName);
-        Component artistComponent = miniMessage.deserialize(artist);
-
-        String parsedDisplayName = legacySerializer.serialize(displayNameComponent);
-        String parsedArtist = legacySerializer.serialize(artistComponent);
-
-        return new ParseConfigValues(parsedDisplayName, parsedArtist);
-    }
-
 
     private void populateInventory(Inventory cachedGUI) {
         cachedGUI.clear();
@@ -106,13 +97,13 @@ public class SongSelectionGUI implements InventoryHolder {
             container.set(new NamespacedKey(plugin, "songName"), PersistentDataType.STRING, song.getName());
 
             // Set the song display name for player visibility
-            ParseConfigValues parsedDetails = parseSongDetails(song.getDisplayName(), song.getArtist());
-            songMeta.setDisplayName("§6" + parsedDetails.displayName());
+            Component displayNameComponent = messageUtil.parse("<gold>" + song.getDisplayName());
+            songMeta.displayName(displayNameComponent);
 
             // Add artist credit to the lore
-            List<String> lore = new ArrayList<>();
-            lore.add("§7By " + parsedDetails.artist());
-            songMeta.setLore(lore);
+            List<Component> lore = new ArrayList<>();
+            lore.add(messageUtil.parse("<gray>By " + song.getArtist()));
+            songMeta.lore(lore);
 
             // Add custom model data to song items
             if (customModelData != -1) {
@@ -127,19 +118,19 @@ public class SongSelectionGUI implements InventoryHolder {
 
         // Previous page
         if (currentPage > 0) {
-            addNavigationItem(Material.ARROW, "§aPrevious Page", "previousPage", invSize - 9); //First slot of bottom row
+            addNavigationItem(Material.ARROW, "<green>Previous Page", "previousPage", invSize - 9);
         }
 
         // Next page
         if (endIndex < songs.size()) {
-            addNavigationItem(Material.ARROW, "§aNext Page", "nextPage", invSize - 1); //Last slot of bottom row
+            addNavigationItem(Material.ARROW, "<green>Next Page", "nextPage", invSize - 1);
         }
 
         // Stop Song
-        addNavigationItem(Material.BARRIER, "§cStop Song", "stopSong", invSize - 5); //Middle slot of bottom row
+        addNavigationItem(Material.BARRIER, "<red>Stop Song", "stopSong", invSize - 5);
 
         // Vote skip button
-        addNavigationItem(Material.ARROW, "§6Vote to Skip", "voteSkip", invSize - 7); // 3rd slot from the left
+        addNavigationItem(Material.ARROW, "<gold>Vote to Skip", "voteSkip", invSize - 7);
 
         // Now playing info
         Song currentSong = songManager.getCurrentSong();
@@ -151,7 +142,12 @@ public class SongSelectionGUI implements InventoryHolder {
     private void addNavigationItem(Material material, String displayName, String action, int slot) {
         ItemStack item = new ItemStack(material);
         ItemMeta meta = item.getItemMeta();
-        meta.setDisplayName(displayName);
+
+        // Create a Component for the display name
+        Component displayNameComponent = messageUtil.parse(displayName);
+
+        // Use the Component with the item meta
+        meta.displayName(displayNameComponent);
 
         // Set metadata for navigation
         PersistentDataContainer container = meta.getPersistentDataContainer();
@@ -174,14 +170,13 @@ public class SongSelectionGUI implements InventoryHolder {
 
         ItemStack item = new ItemStack(Material.NAME_TAG);
         ItemMeta meta = item.getItemMeta();
-        meta.setDisplayName("§6Currently Playing");
-        ParseConfigValues parsedDetails = parseSongDetails(song.getDisplayName(), song.getArtist());
+        meta.displayName(messageUtil.parse("<gold>Currently Playing"));
 
-        List<String> lore = new ArrayList<>();
-        lore.add("§eTitle: §7" + parsedDetails.displayName());
-        lore.add("§eArtist: §7" + parsedDetails.artist());
-        lore.add("§eAdded by: §7" + playerName);
-        meta.setLore(lore);
+        List<Component> lore = new ArrayList<>();
+        lore.add(messageUtil.parse("<yellow>Title: <gray>" + song.getDisplayName()));
+        lore.add(messageUtil.parse("<yellow>Artist: <gray>" + song.getArtist()));
+        lore.add(messageUtil.parse("<yellow>Added by: <gray>" + playerName));
+        meta.lore(lore);
 
         item.setItemMeta(meta);
         cachedGUI.setItem(slot, item);

@@ -1,5 +1,7 @@
 package me.xidentified.tavernbard;
 
+import me.xidentified.tavernbard.managers.SongManager;
+import me.xidentified.tavernbard.util.MessageUtil;
 import net.citizensnpcs.api.persistence.Persist;
 import net.citizensnpcs.api.trait.Trait;
 import net.citizensnpcs.api.trait.TraitName;
@@ -38,7 +40,7 @@ public class BardTrait extends Trait {
     public void onRightClick(NPCRightClickEvent event) {
         if (event.getNPC() == this.getNPC()) {
             Player player = event.getClicker();
-            SongSelectionGUI gui = new SongSelectionGUI(plugin, songManager, event.getNPC());
+            SongSelectionGUI gui = new SongSelectionGUI(plugin, songManager, event.getNPC(), this.plugin.getMessageUtil());
             player.openInventory(gui.getInventory());
         }
     }

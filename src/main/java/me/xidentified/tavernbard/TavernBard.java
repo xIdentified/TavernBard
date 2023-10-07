@@ -1,5 +1,9 @@
 package me.xidentified.tavernbard;
 
+import me.xidentified.tavernbard.listeners.EventListener;
+import me.xidentified.tavernbard.managers.QueueManager;
+import me.xidentified.tavernbard.managers.SongManager;
+import me.xidentified.tavernbard.util.MessageUtil;
 import net.citizensnpcs.api.CitizensAPI;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -9,6 +13,7 @@ import java.util.logging.Level;
 public final class TavernBard extends JavaPlugin {
 
     private SongManager songManager;
+    private MessageUtil messageUtil;
 
     @Override
     public void onEnable() {
@@ -24,7 +29,8 @@ public final class TavernBard extends JavaPlugin {
         saveDefaultConfig();
         reloadConfig();
 
-        // Initialize SongManager
+        // Initialize SongManager, QueueManager, and MessageUtil classes
+        this.messageUtil = new MessageUtil(getConfig());
         songManager = new SongManager(this);
         QueueManager queueManager = new QueueManager(this, songManager);
 
@@ -32,7 +38,7 @@ public final class TavernBard extends JavaPlugin {
         CitizensAPI.getTraitFactory().registerTrait(net.citizensnpcs.api.trait.TraitInfo.create(BardTrait.class));
 
         // Initialize and register EventListener
-        EventListener eventListener = new EventListener(this, songManager);
+        EventListener eventListener = new EventListener(this, songManager, messageUtil);
         getServer().getPluginManager().registerEvents(eventListener, this);
 
         // Register commands
@@ -54,6 +60,10 @@ public final class TavernBard extends JavaPlugin {
     // Getter methods
     public SongManager getSongManager() {
         return songManager;
+    }
+
+    public MessageUtil getMessageUtil() {
+        return messageUtil;
     }
 
     public void debugLog(String message) {
