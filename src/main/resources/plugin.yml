@@ -1,0 +1,24 @@
+name: TavernBard
+version: '${project.version}'
+main: me.xidentified.tavernbard.TavernBard
+author: xIdentified
+api-version: '1.20'
+depend: [Citizens]
+commands:
+  bard:
+    description: Command for TavernBard actions.
+    usage: /<command> [reload|queue|vote]
+    aliases: tavernbard
+permissions:
+  bard.reload:
+    description: Allows reloading of TavernBard configuration.
+    default: op
+  bard.stop.any:
+    description: Allows you to stop any song.
+    default: op
+  bard.play:
+    description: Allows playing songs.
+    default: true
+  bard.vote:
+    description: Allows voting to skip the current song.
+    default: true

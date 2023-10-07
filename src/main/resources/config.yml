@@ -1,0 +1,38 @@
+#Tavern Bard
+#Made by xIdentified
+
+#If you manage the resource pack already just set this to false, this pack has some example songs
+resource_pack:
+  external-host:
+    enabled: true
+    pack-link: "https://download.mc-packs.net/pack/9f264208c737992f973b5f1d83668a02fe0ef0a2.zip"
+
+song-play-radius: 20.0 #Radius around the NPC in which players can hear music
+default-song-duration: 180 #In seconds, 3 minutes
+max-queue-size: 10 #How many songs can be in the queue at once
+
+gui-title: "<gold>Song Selection"
+song-material: "NOTE_BLOCK" #You can also use ITEM_NAME#1234 for custom model data
+
+#List the file here using the same name as the .ogg file in your resource pack
+songs:
+  song1:
+    namespace: minecraft
+    name: marked
+    displayName: "<gold>Marked"
+    artist: "<gray>Alexander Nakarada"
+    duration: 154  #in seconds
+  song2:
+    namespace: minecraft
+    name: ale_and_anecdotes
+    displayName: "Ale and Anecdotes"
+    artist: "Darren Curtis"
+    duration: 133
+  song3:
+    namespace: minecraft
+    name: the_medieval_banquet
+    displayName: "The Medieval Banquet"
+    artist: "Silvermansound"
+    duration: 110
+
+debug_mode: false
