@@ -19,6 +19,7 @@ public class SongManager {
     private final TavernBard plugin;
     private final QueueManager queueManager;
     private final EconomyManager economyManager;
+    private final ItemCostManager itemCostManager;
     private final SongSelectionGUI songSelectionGUI;
     private final List<Song> songs;
     private boolean isSongPlaying = false;
@@ -36,7 +37,13 @@ public class SongManager {
         this.songs = loadSongsFromConfig();
         this.songPlayRadius = plugin.getConfig().getDouble("song-play-radius", 20.0);
         this.defaultSongDuration = plugin.getConfig().getInt("default-song-duration", 180);
-        this.songSelectionGUI = new SongSelectionGUI(this.plugin, this, bardNpc, this.plugin.getMessageUtil());
+        this.songSelectionGUI = new SongSelectionGUI(this.plugin, this, bardNpc);
+        this.itemCostManager = new ItemCostManager(
+                plugin.getConfig().getString("item-cost.item", "GOLD_NUGGET"),
+                plugin.getConfig().getInt("item-cost.amount", 3),
+                plugin.getConfig().getBoolean("item-cost.enabled", false),
+                plugin  // pass plugin instance to log warnings if needed
+        );
     }
 
     // Reload songs from config
@@ -69,21 +76,35 @@ public class SongManager {
     }
 
 
-    public void playSongForNearbyPlayers(Player player, NPC bardNpc, Song selectedSong) {
+    public void playSongForNearbyPlayers(Player player, NPC bardNpc, Song selectedSong, boolean chargePlayer) {
+        MessageUtil messageUtil = this.plugin.getMessageUtil();
         songStarter = player;
         this.bardNpc = bardNpc;
+
         plugin.debugLog("Attempting to play song: " + selectedSong.getDisplayName() + " for " + (songStarter != null ? songStarter.getName() : "Unknown Player"));
 
+        // Check if item cost is enabled, return if they can't afford it
+        if (chargePlayer && itemCostManager.isEnabled() && !itemCostManager.canAfford(player)) {
+            messageUtil.sendParsedMessage(player, "<red>You need " + itemCostManager.getCostAmount() + " " + itemCostManager.formatEnumName(itemCostManager.getCostItem().name()) + "(s) to play a song!");
+            return;
+        }
+
         // Check if economy is enabled
-        if(plugin.getConfig().getBoolean("economy.enabled")) {
+        if(chargePlayer && plugin.getConfig().getBoolean("economy.enabled")) {
             double costPerSong = plugin.getConfig().getDouble("economy.cost-per-song");
 
             // Check and charge the player
             if(!economyManager.chargePlayer(player, costPerSong)) {
-                MessageUtil messageUtil = this.plugin.getMessageUtil();
-                messageUtil.sendParsedMessage(player, "<red>You do not have enough money to play a song!");
+                messageUtil.sendParsedMessage(player, "<red>You need " + costPerSong + " coins to play a song!");
                 return;
+            } else {
+                messageUtil.sendParsedMessage(player, "<green>Paid " + costPerSong + " coins to play a song!");
             }
+        }
+
+        if (chargePlayer && itemCostManager.isEnabled()) {
+            itemCostManager.deductCost(player);
+            messageUtil.sendParsedMessage(player, "<green>Charged " + itemCostManager.getCostAmount() + " " + itemCostManager.formatEnumName(itemCostManager.getCostItem().name()) + "(s) to play a song!");
         }
 
         // If something is already playing, add song to queue
@@ -116,7 +137,6 @@ public class SongManager {
             currentSong = new Song(selectedSong.getNamespace(), selectedSong.getName(), selectedSong.getDisplayName(), selectedSong.getArtist(), selectedSong.getDuration(), songStarter.getUniqueId());
             songSelectionGUI.updateNowPlayingInfo();
         }
-
 
         plugin.debugLog("Sound play attempt complete");
 
@@ -159,7 +179,7 @@ public class SongManager {
         // Attempt to play next song in queue
         Song nextSong = queueManager.getNextSongFromQueue();
         if (nextSong != null) {
-            playSongForNearbyPlayers(songStarter, bardNpc, nextSong);
+            playSongForNearbyPlayers(songStarter, bardNpc, nextSong, false); // Charge player: false
         }
     }
 

@@ -1,6 +1,7 @@
 package me.xidentified.tavernbard;
 
 import me.xidentified.tavernbard.listeners.EventListener;
+import me.xidentified.tavernbard.listeners.ResourcePackListener;
 import me.xidentified.tavernbard.managers.QueueManager;
 import me.xidentified.tavernbard.managers.SongManager;
 import me.xidentified.tavernbard.util.MessageUtil;
@@ -37,9 +38,12 @@ public final class TavernBard extends JavaPlugin {
         // Register the bard trait with Citizens.
         CitizensAPI.getTraitFactory().registerTrait(net.citizensnpcs.api.trait.TraitInfo.create(BardTrait.class));
 
-        // Initialize and register EventListener
-        EventListener eventListener = new EventListener(this, songManager, messageUtil);
+        // Initialize and register listeners
+        EventListener eventListener = new EventListener(this, songManager);
         getServer().getPluginManager().registerEvents(eventListener, this);
+
+        ResourcePackListener resourcePackListener = new ResourcePackListener(this);
+        getServer().getPluginManager().registerEvents(resourcePackListener, this);
 
         // Register commands
         this.getCommand("bard").setExecutor(new CommandHandler(songManager, queueManager));

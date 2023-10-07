@@ -40,7 +40,7 @@ public class BardTrait extends Trait {
     public void onRightClick(NPCRightClickEvent event) {
         if (event.getNPC() == this.getNPC()) {
             Player player = event.getClicker();
-            SongSelectionGUI gui = new SongSelectionGUI(plugin, songManager, event.getNPC(), this.plugin.getMessageUtil());
+            SongSelectionGUI gui = new SongSelectionGUI(plugin, songManager, event.getNPC());
             player.openInventory(gui.getInventory());
         }
     }

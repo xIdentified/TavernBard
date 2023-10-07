@@ -36,8 +36,13 @@ songs:
     artist: "Silvermansound"
     duration: 110
 
-economy:
-  enabled: false  #Do you want to use economy? (requires vault)
-  cost-per-song: 10  #Charge players to play or queue songs
+economy-cost:
+  enabled: false  #Do you want to charge players money to play or queue songs? (requires vault)
+  cost-per-song: 10
+item-cost:
+  enabled: false #Do you want to charge players items to play or queue songs?
+  item: GOLD_NUGGET
+  amount: 3
+
 
 debug_mode: false

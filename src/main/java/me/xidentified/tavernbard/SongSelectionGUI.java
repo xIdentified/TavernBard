@@ -24,20 +24,18 @@ public class SongSelectionGUI implements InventoryHolder {
     private final TavernBard plugin;
     private final SongManager songManager;
     private final NPC bardNpc;
-    private final MessageUtil messageUtil;
     private final int ITEMS_PER_PAGE = 45;
     private int currentPage = 0;
     private final Inventory cachedGUI;
 
-    public SongSelectionGUI(TavernBard plugin, SongManager songManager, NPC bardNpc, MessageUtil messageUtil) {
+    public SongSelectionGUI(TavernBard plugin, SongManager songManager, NPC bardNpc) {
         this.plugin = plugin;
         this.songManager = songManager;
         this.bardNpc = bardNpc;
-        this.messageUtil = messageUtil;
 
         // Initialize the cached GUI
-        String guiTitle = messageUtil.getConfigMessage("gui-title", "<gold>Song Selection");
-        Component titleComponent = messageUtil.parse(guiTitle);
+        String guiTitle = messageUtil().getConfigMessage("gui-title", "<gold>Song Selection");
+        Component titleComponent = messageUtil().parse(guiTitle);
         this.cachedGUI = Bukkit.getServer().createInventory(this, getInventorySize(songManager.getSongs().size()), titleComponent);
         populateCachedGUI();
     }
@@ -52,8 +50,8 @@ public class SongSelectionGUI implements InventoryHolder {
     }
 
     public Inventory getClonedGUIForPlayer() {
-        String guiTitle = messageUtil.getConfigMessage("gui-title", "<gold>Song Selection");
-        Component titleComponent = messageUtil.parse(guiTitle);
+        String guiTitle = messageUtil().getConfigMessage("gui-title", "<gold>Song Selection");
+        Component titleComponent = messageUtil().parse(guiTitle);
         Inventory playerGUI = Bukkit.createInventory(this, cachedGUI.getSize(), titleComponent);
         playerGUI.setContents(cachedGUI.getContents().clone());
         return playerGUI;
@@ -97,12 +95,12 @@ public class SongSelectionGUI implements InventoryHolder {
             container.set(new NamespacedKey(plugin, "songName"), PersistentDataType.STRING, song.getName());
 
             // Set the song display name for player visibility
-            Component displayNameComponent = messageUtil.parse("<gold>" + song.getDisplayName());
+            Component displayNameComponent = messageUtil().parse("<gold>" + song.getDisplayName());
             songMeta.displayName(displayNameComponent);
 
             // Add artist credit to the lore
             List<Component> lore = new ArrayList<>();
-            lore.add(messageUtil.parse("<gray>By " + song.getArtist()));
+            lore.add(messageUtil().parse("<gray>By " + song.getArtist()));
             songMeta.lore(lore);
 
             // Add custom model data to song items
@@ -144,7 +142,7 @@ public class SongSelectionGUI implements InventoryHolder {
         ItemMeta meta = item.getItemMeta();
 
         // Create a Component for the display name
-        Component displayNameComponent = messageUtil.parse(displayName);
+        Component displayNameComponent = messageUtil().parse(displayName);
 
         // Use the Component with the item meta
         meta.displayName(displayNameComponent);
@@ -170,12 +168,12 @@ public class SongSelectionGUI implements InventoryHolder {
 
         ItemStack item = new ItemStack(Material.NAME_TAG);
         ItemMeta meta = item.getItemMeta();
-        meta.displayName(messageUtil.parse("<gold>Currently Playing"));
+        meta.displayName(messageUtil().parse("<gold>Currently Playing"));
 
         List<Component> lore = new ArrayList<>();
-        lore.add(messageUtil.parse("<yellow>Title: <gray>" + song.getDisplayName()));
-        lore.add(messageUtil.parse("<yellow>Artist: <gray>" + song.getArtist()));
-        lore.add(messageUtil.parse("<yellow>Added by: <gray>" + playerName));
+        lore.add(messageUtil().parse("<yellow>Title: <gray>" + song.getDisplayName()));
+        lore.add(messageUtil().parse("<yellow>Artist: <gray>" + song.getArtist()));
+        lore.add(messageUtil().parse("<yellow>Added by: <gray>" + playerName));
         meta.lore(lore);
 
         item.setItemMeta(meta);
@@ -212,5 +210,9 @@ public class SongSelectionGUI implements InventoryHolder {
 
     public NPC getBardNpc() {
         return bardNpc;
+    }
+
+    private MessageUtil messageUtil(){
+        return this.plugin.getMessageUtil();
     }
 }
