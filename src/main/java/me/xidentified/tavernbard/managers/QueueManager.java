@@ -75,7 +75,7 @@ public class QueueManager {
             resetSkipVotes();
             Song nextSong = getNextSongFromQueue();
             if (nextSong != null) {
-                songManager.playSongForNearbyPlayers(songManager.songStarter, songManager.bardNpc, nextSong);
+                songManager.playSongForNearbyPlayers(songManager.songStarter, songManager.bardNpc, nextSong, true);
             }
             messageUtil.sendParsedMessage(player, "<red>The song has been skipped due to majority vote.");
         } else {

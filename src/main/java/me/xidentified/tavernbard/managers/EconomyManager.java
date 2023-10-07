@@ -1,7 +1,6 @@
 package me.xidentified.tavernbard.managers;
 
 import me.xidentified.tavernbard.TavernBard;
-import me.xidentified.tavernbard.util.MessageUtil;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.RegisteredServiceProvider;
@@ -9,12 +8,10 @@ import org.bukkit.plugin.RegisteredServiceProvider;
 public class EconomyManager {
 
     private final TavernBard plugin;
-    private final MessageUtil messageUtil;
     private Economy economy;
 
     public EconomyManager(TavernBard plugin) {
         this.plugin = plugin;
-        this.messageUtil = plugin.getMessageUtil();
         setupEconomy();
     }
 
@@ -32,10 +29,8 @@ public class EconomyManager {
     public boolean chargePlayer(Player player, double amount) {
         if(economy.has(player, amount)) {
             economy.withdrawPlayer(player, amount);
-            messageUtil.sendParsedMessage(player, "<green>Paid the bard " + amount + " to perform.");
             return true;  // Good to go!
         }
-        messageUtil.sendParsedMessage(player, "<red>Insufficient funds. Costs " + amount + " to play.");
         return false;  // Not enough monies
     }
 }

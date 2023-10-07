@@ -75,7 +75,7 @@ public class EventListener implements Listener {
                 if (selectedSong != null) {
                     plugin.debugLog("Song selected: " + selectedSong.getDisplayName());
                     NPC bardNpc = songSelectionGUI.getBardNpc();
-                    songManager.playSongForNearbyPlayers(player, bardNpc, selectedSong);
+                    songManager.playSongForNearbyPlayers(player, bardNpc, selectedSong, true);
                     player.closeInventory();
                 } else {
                     plugin.debugLog("Song not found for name: " + actualSongName);
