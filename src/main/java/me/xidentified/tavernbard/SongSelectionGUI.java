@@ -41,6 +41,7 @@ public class SongSelectionGUI implements InventoryHolder {
 
     private void populateCachedGUI() {
         populateInventory(cachedGUI);
+        updateNowPlayingInfo();
     }
 
     @Override

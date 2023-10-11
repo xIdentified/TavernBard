@@ -51,6 +51,9 @@ public class GUIListener implements Listener {
                 Song selectedSong = songManager.getSongByName(actualSongName);
                 if (selectedSong != null) {
                     plugin.debugLog("Song selected: " + selectedSong.getDisplayName());
+
+                    songManager.songStarter.put(npcId, player);
+
                     songManager.playSongForNearbyPlayers(player, npcId, selectedSong, true);
                     player.closeInventory();
                 } else {

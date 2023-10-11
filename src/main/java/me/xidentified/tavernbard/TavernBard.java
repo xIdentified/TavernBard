@@ -3,11 +3,13 @@ package me.xidentified.tavernbard;
 import me.xidentified.tavernbard.listeners.BardInteractListener;
 import me.xidentified.tavernbard.listeners.GUIListener;
 import me.xidentified.tavernbard.listeners.ResourcePackListener;
+import me.xidentified.tavernbard.managers.CooldownManager;
 import me.xidentified.tavernbard.managers.QueueManager;
 import me.xidentified.tavernbard.managers.SongManager;
 import me.xidentified.tavernbard.util.MessageUtil;
 import net.citizensnpcs.api.CitizensAPI;
 import org.bukkit.Bukkit;
+import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.Objects;
@@ -17,6 +19,7 @@ public final class TavernBard extends JavaPlugin {
 
     private SongManager songManager;
     private MessageUtil messageUtil;
+    private CooldownManager cooldownManager;
 
     @Override
     public void onEnable() {
@@ -34,8 +37,9 @@ public final class TavernBard extends JavaPlugin {
 
         // Initialize SongManager, QueueManager, and MessageUtil classes
         this.messageUtil = new MessageUtil(getConfig());
+        cooldownManager = new CooldownManager();
         songManager = new SongManager(this);
-        QueueManager queueManager = new QueueManager(this, songManager);
+        QueueManager queueManager = new QueueManager(this, songManager, cooldownManager);
 
         // Register the bard trait with Citizens.
         CitizensAPI.getTraitFactory().registerTrait(net.citizensnpcs.api.trait.TraitInfo.create(BardTrait.class));
@@ -62,8 +66,12 @@ public final class TavernBard extends JavaPlugin {
             CitizensAPI.getTraitFactory().deregisterTrait(net.citizensnpcs.api.trait.TraitInfo.create(BardTrait.class));
         }
 
+        // Unregister listeners
+        HandlerList.unregisterAll();
+
         // Cancel all tasks
         Bukkit.getScheduler().cancelTasks(this);
+
     }
 
     // Getter methods
@@ -73,6 +81,10 @@ public final class TavernBard extends JavaPlugin {
 
     public MessageUtil getMessageUtil() {
         return messageUtil;
+    }
+
+    public CooldownManager getCooldownManager() {
+        return cooldownManager;
     }
 
     public void debugLog(String message) {

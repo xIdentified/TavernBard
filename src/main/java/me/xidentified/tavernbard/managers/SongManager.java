@@ -12,8 +12,10 @@ import org.bukkit.*;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class SongManager {
 
@@ -22,17 +24,17 @@ public class SongManager {
     private final EconomyManager economyManager;
     private final ItemCostManager itemCostManager;
     private final List<Song> songs;
-    private final Map<UUID, Boolean> isSongPlaying = new HashMap<>();
     protected final double songPlayRadius;
     private final int defaultSongDuration;
-    protected final Map<UUID, Player> songStarter = new HashMap<>();
-    private final Map<UUID, Song> currentSong = new HashMap<>();
-    private final Map<UUID, Integer> currentSongTaskId = new HashMap<>();
-    public final Map<UUID, NPC> bardNpcs = new HashMap<>();
+    public final Map<UUID, Player> songStarter = new ConcurrentHashMap<>();
+    private final Map<UUID, Boolean> isSongPlaying = new ConcurrentHashMap<>();
+    private final Map<UUID, Song> currentSong = new ConcurrentHashMap<>();
+    private final Map<UUID, Integer> currentSongTaskId = new ConcurrentHashMap<>();
+    public final Map<UUID, NPC> bardNpcs = new ConcurrentHashMap<>();
 
     public SongManager(TavernBard plugin) {
         this.plugin = plugin;
-        this.queueManager = new QueueManager(this.plugin, this);
+        this.queueManager = new QueueManager(this.plugin, this, plugin.getCooldownManager());
         this.economyManager = new EconomyManager(this.plugin);
         this.songs = loadSongsFromConfig();
         this.songPlayRadius = plugin.getConfig().getDouble("song-play-radius", 20.0);
@@ -41,7 +43,7 @@ public class SongManager {
                 plugin.getConfig().getString("item-cost.item", "GOLD_NUGGET"),
                 plugin.getConfig().getInt("item-cost.amount", 3),
                 plugin.getConfig().getBoolean("item-cost.enabled", false),
-                plugin  // pass plugin instance to log warnings if needed
+                plugin
         );
     }
 
@@ -82,7 +84,14 @@ public class SongManager {
         return loadedSongs;
     }
 
-    public void playSongForNearbyPlayers(Player player, UUID npcId, Song selectedSong, boolean chargePlayer) {
+    public void playSongForNearbyPlayers(Player player, @NotNull UUID npcId, @NotNull Song selectedSong, boolean chargePlayer) {
+
+        Player starter = songStarter.get(npcId);
+        if(starter == null) {
+            plugin.getLogger().severe("songStarter does not contain key: " + npcId);
+            return;
+        }
+
         NPC bardNpc = bardNpcs.get(npcId);
         if (bardNpc == null) {
             // Log or handle the error accordingly
@@ -90,18 +99,18 @@ public class SongManager {
             return;
         }
 
-        MessageUtil messageUtil = this.plugin.getMessageUtil();
-        songStarter.put(npcId, player);
         plugin.debugLog("Attempting to play song: " + selectedSong.getDisplayName() + " for " + songStarter);
+        MessageUtil messageUtil = this.plugin.getMessageUtil();
+        CooldownManager cooldownManager = this.plugin.getCooldownManager();
 
         // Check if item cost is enabled, return if they can't afford it
-        if (chargePlayer && itemCostManager.isEnabled() && !itemCostManager.canAfford(player)) {
+        if (!cooldownManager.isOnCooldown(player) && chargePlayer && itemCostManager.isEnabled() && !itemCostManager.canAfford(player)) {
             messageUtil.sendParsedMessage(player, "<red>You need " + itemCostManager.getCostAmount() + " " + itemCostManager.formatEnumName(itemCostManager.getCostItem().name()) + "(s) to play a song!");
             return;
         }
 
         // Check if economy is enabled
-        if(chargePlayer && plugin.getConfig().getBoolean("economy.enabled")) {
+        if(!cooldownManager.isOnCooldown(player) && chargePlayer && plugin.getConfig().getBoolean("economy.enabled")) {
             double costPerSong = plugin.getConfig().getDouble("economy.cost-per-song");
 
             // Check and charge the player
@@ -113,15 +122,13 @@ public class SongManager {
             }
         }
 
-        if (chargePlayer && itemCostManager.isEnabled()) {
+        if (!cooldownManager.isOnCooldown(player) && chargePlayer && itemCostManager.isEnabled()) {
             itemCostManager.deductCost(player);
             messageUtil.sendParsedMessage(player, "<green>Charged " + itemCostManager.getCostAmount() + " " + itemCostManager.formatEnumName(itemCostManager.getCostItem().name()) + "(s) to play a song!");
         }
 
         // If something is already playing, add song to queue
-        // Check if a song is already playing for the NPC
         if (isSongPlaying(npcId)) {
-            // Add the new song to the queue instead of playing it immediately
             queueManager.addSongToQueue(npcId, selectedSong, player);
             return;
         }
@@ -148,6 +155,12 @@ public class SongManager {
                 nearbyPlayer.showTitle(title);
             }
             currentSong.put(npcId, new Song(selectedSong.getNamespace(), selectedSong.getName(), selectedSong.getDisplayName(), selectedSong.getArtist(), selectedSong.getDuration(), songStarter.get(npcId).getUniqueId()));
+
+            // Update now playing info
+            SongSelectionGUI gui = getSongSelectionGUIForNPC(npcId);
+            if (gui != null) {
+                gui.updateNowPlayingInfo();
+            }
         }
 
         plugin.debugLog("Sound play attempt complete");
@@ -196,7 +209,7 @@ public class SongManager {
         // Attempt to play next song in queue
         Song nextSong = queueManager.getNextSongFromQueue(npcId);
         if (nextSong != null && npcId != null) {
-            playSongForNearbyPlayers(songStarter, npcId, nextSong, false); // Charge player: false
+            playSongForNearbyPlayers(songStarter, npcId, nextSong, false);
         }
     }
 

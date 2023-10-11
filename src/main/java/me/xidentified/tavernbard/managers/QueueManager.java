@@ -8,25 +8,34 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 public class QueueManager {
     private final SongManager songManager;
     private final MessageUtil messageUtil;
+    private final CooldownManager cooldownManager;
     private final Map<UUID, Queue<Song>> npcSongQueues = new HashMap<>();
     private final Map<UUID, Set<UUID>> npcPlayersVotedToSkip = new HashMap<>();
     private final Map<UUID, Integer> npcSkipVotesCount = new HashMap<>();
     private final TavernBard plugin;
     private final int MAX_QUEUE_SIZE;
 
-    public QueueManager(TavernBard plugin, SongManager songManager) {
+    public QueueManager(TavernBard plugin, SongManager songManager, CooldownManager cooldownManager) {
         this.plugin = plugin;
         this.songManager = songManager;
+        this.cooldownManager = cooldownManager;
         this.messageUtil = plugin.getMessageUtil();
         this.MAX_QUEUE_SIZE = plugin.getConfig().getInt("max-queue-size", 10);
     }
 
     public void addSongToQueue(UUID npcId, Song song, @NotNull Player player) {
         npcSongQueues.computeIfAbsent(npcId, k -> new LinkedList<>());
+
+        if (cooldownManager.isOnCooldown(player)) {
+            long timeLeft = TimeUnit.MILLISECONDS.toSeconds(cooldownManager.getTimeLeft(player));
+            messageUtil.sendParsedMessage(player, "<red>You can't add another song for " + timeLeft + " seconds!");
+            return;
+        }
 
         if (npcSongQueues.size() >= MAX_QUEUE_SIZE) {
             messageUtil.sendParsedMessage(player, "<red>The queue is full! Please wait for a few songs to finish.");
@@ -35,6 +44,7 @@ public class QueueManager {
 
         player.sendMessage("§aThe song has been added to the queue.");
         npcSongQueues.get(npcId).add(new Song(song.getNamespace(), song.getName(), song.getDisplayName(), song.getArtist(), song.getDuration(), player.getUniqueId()));
+        cooldownManager.setCooldown(player);
         plugin.debugLog("Last song added to queue by: " + (song.getAddedByName() != null ? song.getAddedByName() : "NULL"));
     }
 
