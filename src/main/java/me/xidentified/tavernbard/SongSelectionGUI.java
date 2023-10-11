@@ -20,18 +20,17 @@ import java.util.List;
 import java.util.UUID;
 
 public class SongSelectionGUI implements InventoryHolder {
-
     private final TavernBard plugin;
     private final SongManager songManager;
-    private final NPC bardNpc;
+    private final UUID npcId;
     private final int ITEMS_PER_PAGE = 45;
     private int currentPage = 0;
     private final Inventory cachedGUI;
 
-    public SongSelectionGUI(TavernBard plugin, SongManager songManager, NPC bardNpc) {
+    public SongSelectionGUI(TavernBard plugin, SongManager songManager, UUID npcId) {
         this.plugin = plugin;
         this.songManager = songManager;
-        this.bardNpc = bardNpc;
+        this.npcId = npcId;
 
         // Initialize the cached GUI
         String guiTitle = messageUtil().getConfigMessage("gui-title", "<gold>Song Selection");
@@ -118,20 +117,16 @@ public class SongSelectionGUI implements InventoryHolder {
         if (currentPage > 0) {
             addNavigationItem(Material.ARROW, "<green>Previous Page", "previousPage", invSize - 9);
         }
-
         // Next page
         if (endIndex < songs.size()) {
             addNavigationItem(Material.ARROW, "<green>Next Page", "nextPage", invSize - 1);
         }
-
         // Stop Song
         addNavigationItem(Material.BARRIER, "<red>Stop Song", "stopSong", invSize - 5);
-
         // Vote skip button
         addNavigationItem(Material.ARROW, "<gold>Vote to Skip", "voteSkip", invSize - 7);
-
         // Now playing info
-        Song currentSong = songManager.getCurrentSong();
+        Song currentSong = songManager.getCurrentSong(npcId);
         if (currentSong != null) {
             addNowPlayingInfo(currentSong, invSize - 8, cachedGUI); // 2nd slot from the left
         }
@@ -181,7 +176,7 @@ public class SongSelectionGUI implements InventoryHolder {
     }
 
     public void updateNowPlayingInfo() {
-        Song currentSong = songManager.getCurrentSong();
+        Song currentSong = songManager.getCurrentSong(npcId);
         if (currentSong != null) {
             addNowPlayingInfo(currentSong, cachedGUI.getSize() - 8, cachedGUI);
         } else {
@@ -208,11 +203,12 @@ public class SongSelectionGUI implements InventoryHolder {
         return (rowsForSongs + 1) * 9; // +1 is for the navigation bar that lets you control the music
     }
 
-    public NPC getBardNpc() {
-        return bardNpc;
+    public UUID getNpcId() {
+        return npcId;
     }
 
     private MessageUtil messageUtil(){
         return this.plugin.getMessageUtil();
     }
+
 }

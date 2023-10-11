@@ -16,11 +16,13 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
-public class EventListener implements Listener {
+import java.util.UUID;
+
+public class GUIListener implements Listener {
     private final SongManager songManager;
     private final TavernBard plugin;
 
-    public EventListener(TavernBard plugin, SongManager songManager) {
+    public GUIListener(TavernBard plugin, SongManager songManager) {
         this.plugin = plugin;
         this.songManager = songManager;
     }
@@ -42,13 +44,14 @@ public class EventListener implements Listener {
             ItemMeta meta = clicked.getItemMeta();
             PersistentDataContainer container = meta.getPersistentDataContainer();
 
+            UUID npcId = songSelectionGUI.getNpcId();  // Obtain NPC ID
+
             if (container.has(new NamespacedKey(plugin, "songName"), PersistentDataType.STRING)) {
                 String actualSongName = container.get(new NamespacedKey(plugin, "songName"), PersistentDataType.STRING);
                 Song selectedSong = songManager.getSongByName(actualSongName);
                 if (selectedSong != null) {
                     plugin.debugLog("Song selected: " + selectedSong.getDisplayName());
-                    NPC bardNpc = songSelectionGUI.getBardNpc();
-                    songManager.playSongForNearbyPlayers(player, bardNpc, selectedSong, true);
+                    songManager.playSongForNearbyPlayers(player, npcId, selectedSong, true);
                     player.closeInventory();
                 } else {
                     plugin.debugLog("Song not found for name: " + actualSongName);
@@ -67,14 +70,17 @@ public class EventListener implements Listener {
                         player.closeInventory();
                     }
                     case "stopSong" -> {
-                        if (player.hasPermission("bard.stop.any") || player.equals(songManager.getSongStarter())) {
-                            if (songManager.isSongPlaying()) {
-                                songManager.stopCurrentSong();
+                        if (songManager.isSongPlaying(npcId)) {
+                            boolean canStop = player.hasPermission("bard.stop.any") || player.equals(songManager.getSongStarter(npcId));
+                            if (canStop) {
+                                songManager.stopCurrentSong(npcId);
                                 player.closeInventory();
                                 plugin.getMessageUtil().sendParsedMessage(player, "<red>Song ended");
+                            } else {
+                                plugin.getMessageUtil().sendParsedMessage(player, "<red>You can only stop your own songs.");
                             }
                         } else {
-                            plugin.getMessageUtil().sendParsedMessage(player, "<red>You can only stop your own songs.");
+                            plugin.getMessageUtil().sendParsedMessage(player, "<red>No song is currently playing.");
                         }
                     }
                     default -> plugin.debugLog("Invalid action: " + action);
@@ -84,5 +90,4 @@ public class EventListener implements Listener {
             }
         }
     }
-
 }

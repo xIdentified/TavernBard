@@ -1,6 +1,7 @@
 package me.xidentified.tavernbard;
 
-import me.xidentified.tavernbard.listeners.EventListener;
+import me.xidentified.tavernbard.listeners.BardInteractListener;
+import me.xidentified.tavernbard.listeners.GUIListener;
 import me.xidentified.tavernbard.listeners.ResourcePackListener;
 import me.xidentified.tavernbard.managers.QueueManager;
 import me.xidentified.tavernbard.managers.SongManager;
@@ -9,6 +10,7 @@ import net.citizensnpcs.api.CitizensAPI;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.Objects;
 import java.util.logging.Level;
 
 public final class TavernBard extends JavaPlugin {
@@ -20,7 +22,7 @@ public final class TavernBard extends JavaPlugin {
     public void onEnable() {
         // Check if Citizens is enabled
         if (getServer().getPluginManager().getPlugin("Citizens") == null ||
-                !getServer().getPluginManager().getPlugin("Citizens").isEnabled()) {
+                !Objects.requireNonNull(getServer().getPluginManager().getPlugin("Citizens")).isEnabled()) {
             getLogger().log(Level.SEVERE, "Citizens not found or not enabled");
             getServer().getPluginManager().disablePlugin(this);
             return;
@@ -39,14 +41,17 @@ public final class TavernBard extends JavaPlugin {
         CitizensAPI.getTraitFactory().registerTrait(net.citizensnpcs.api.trait.TraitInfo.create(BardTrait.class));
 
         // Initialize and register listeners
-        EventListener eventListener = new EventListener(this, songManager);
-        getServer().getPluginManager().registerEvents(eventListener, this);
+        GUIListener GUIListener = new GUIListener(this, songManager);
+        getServer().getPluginManager().registerEvents(GUIListener, this);
 
         ResourcePackListener resourcePackListener = new ResourcePackListener(this);
         getServer().getPluginManager().registerEvents(resourcePackListener, this);
 
+        BardInteractListener bardInteractListener = new BardInteractListener(this);
+        getServer().getPluginManager().registerEvents(bardInteractListener, this);
+
         // Register commands
-        this.getCommand("bard").setExecutor(new CommandHandler(songManager, queueManager));
+        Objects.requireNonNull(this.getCommand("bard")).setExecutor(new CommandHandler(songManager, queueManager));
     }
 
     // Plugin shutdown logic
