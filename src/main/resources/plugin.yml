@@ -4,8 +4,7 @@ main: me.xidentified.tavernbard.TavernBard
 author: xIdentified
 api-version: '1.20'
 depend: [Citizens]
-softdepend:
-  - Vault
+softdepend: [Vault, MythicMobs]
 commands:
   bard:
     description: Command for TavernBard actions.

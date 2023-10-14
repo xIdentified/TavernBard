@@ -1,5 +1,7 @@
 package me.xidentified.tavernbard.listeners;
 
+import io.lumine.mythic.bukkit.events.MythicMobInteractEvent;
+import io.lumine.mythic.core.mobs.ActiveMob;
 import me.xidentified.tavernbard.BardTrait;
 import me.xidentified.tavernbard.SongSelectionGUI;
 import me.xidentified.tavernbard.TavernBard;
@@ -18,21 +20,37 @@ public class BardInteractListener implements Listener {
         this.plugin = plugin;
     }
 
+    // Handle interactions with Citizens NPCs
     @EventHandler
-    public void onRightClick(NPCRightClickEvent event) {
+    public void onRightClickNPC(NPCRightClickEvent event) {
         NPC npc = event.getNPC();
-        if (npc.hasTrait(BardTrait.class) && npc.getTrait(BardTrait.class).isBard()) {
-            UUID npcId = npc.getUniqueId();
-            Player player = event.getClicker();
-            SongSelectionGUI gui = new SongSelectionGUI(plugin, plugin.getSongManager(), npcId);
-            player.openInventory(gui.getInventory());
+        if (npc.hasTrait(BardTrait.class))
+            handleInteraction(npc.getUniqueId(), event.getClicker());
+    }
 
-            if (!plugin.getSongManager().bardNpcs.containsKey(npcId)) {
-                plugin.debugLog("Adding NPC with ID: " + npcId);
-                plugin.getSongManager().bardNpcs.put(npcId, npc);
-            } else {
-                plugin.debugLog("NPC with ID: " + npcId + " already added.");
-            }
+    @EventHandler
+    public void onMythicMobInteract(MythicMobInteractEvent event) {
+        ActiveMob interactedMob = event.getActiveMob();
+        if (plugin.getServer().getPluginManager().isPluginEnabled("MythicMobs")) {
+            if (interactedMob.getType().getConfig().getBoolean("Options.IsBard"))
+                handleInteraction(interactedMob.getUniqueId(), event.getPlayer());
         }
     }
+
+    public void handleInteraction(UUID bardEntityId, Player player) {
+        plugin.debugLog("handleInteraction method fired");
+
+        SongSelectionGUI gui = new SongSelectionGUI(plugin, plugin.getSongManager(), bardEntityId);
+        player.openInventory(gui.getInventory());
+
+        if (!plugin.getSongManager().bardNpcs.containsKey(bardEntityId)) {
+            plugin.debugLog("Adding entity with ID: " + bardEntityId);
+            if (bardEntityId != null) {
+                plugin.getSongManager().bardNpcs.put(bardEntityId, player.getUniqueId());
+            }
+        } else {
+            plugin.debugLog("Entity with ID: " + bardEntityId + " already added.");
+        }
+    }
+
 }

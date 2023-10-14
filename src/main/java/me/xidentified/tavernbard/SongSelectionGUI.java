@@ -2,7 +2,6 @@ package me.xidentified.tavernbard;
 
 import me.xidentified.tavernbard.managers.SongManager;
 import me.xidentified.tavernbard.util.MessageUtil;
-import net.citizensnpcs.api.npc.NPC;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -22,15 +21,15 @@ import java.util.UUID;
 public class SongSelectionGUI implements InventoryHolder {
     private final TavernBard plugin;
     private final SongManager songManager;
-    private final UUID npcId;
+    private final UUID bardId;
     private final int ITEMS_PER_PAGE = 45;
     private int currentPage = 0;
     private final Inventory cachedGUI;
 
-    public SongSelectionGUI(TavernBard plugin, SongManager songManager, UUID npcId) {
+    public SongSelectionGUI(TavernBard plugin, SongManager songManager, UUID bardId) {
         this.plugin = plugin;
         this.songManager = songManager;
-        this.npcId = npcId;
+        this.bardId = bardId;
 
         // Initialize the cached GUI
         String guiTitle = messageUtil().getConfigMessage("gui-title", "<gold>Song Selection");
@@ -127,7 +126,7 @@ public class SongSelectionGUI implements InventoryHolder {
         // Vote skip button
         addNavigationItem(Material.ARROW, "<gold>Vote to Skip", "voteSkip", invSize - 7);
         // Now playing info
-        Song currentSong = songManager.getCurrentSong(npcId);
+        Song currentSong = songManager.getCurrentSong(bardId);
         if (currentSong != null) {
             addNowPlayingInfo(currentSong, invSize - 8, cachedGUI); // 2nd slot from the left
         }
@@ -177,7 +176,7 @@ public class SongSelectionGUI implements InventoryHolder {
     }
 
     public void updateNowPlayingInfo() {
-        Song currentSong = songManager.getCurrentSong(npcId);
+        Song currentSong = songManager.getCurrentSong(bardId);
         if (currentSong != null) {
             addNowPlayingInfo(currentSong, cachedGUI.getSize() - 8, cachedGUI);
         } else {
@@ -204,8 +203,8 @@ public class SongSelectionGUI implements InventoryHolder {
         return (rowsForSongs + 1) * 9; // +1 is for the navigation bar that lets you control the music
     }
 
-    public UUID getNpcId() {
-        return npcId;
+    public UUID getBardId() {
+        return bardId;
     }
 
     private MessageUtil messageUtil(){

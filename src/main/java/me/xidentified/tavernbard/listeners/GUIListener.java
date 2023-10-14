@@ -4,7 +4,6 @@ import me.xidentified.tavernbard.Song;
 import me.xidentified.tavernbard.SongSelectionGUI;
 import me.xidentified.tavernbard.TavernBard;
 import me.xidentified.tavernbard.managers.SongManager;
-import net.citizensnpcs.api.npc.NPC;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -43,8 +42,7 @@ public class GUIListener implements Listener {
 
             ItemMeta meta = clicked.getItemMeta();
             PersistentDataContainer container = meta.getPersistentDataContainer();
-
-            UUID npcId = songSelectionGUI.getNpcId();  // Obtain NPC ID
+            UUID npcId = songSelectionGUI.getBardId();
 
             if (container.has(new NamespacedKey(plugin, "songName"), PersistentDataType.STRING)) {
                 String actualSongName = container.get(new NamespacedKey(plugin, "songName"), PersistentDataType.STRING);

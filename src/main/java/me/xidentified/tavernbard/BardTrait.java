@@ -28,5 +28,6 @@ public class BardTrait extends Trait {
     public boolean isBard() {
         return isBard;
     }
+
 }
 
