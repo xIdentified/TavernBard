@@ -79,8 +79,8 @@ public class QueueManager {
         npcSkipVotesCount.put(bardEntityId, ++skipVotesCount);
 
         // Calculate the number of nearby players to the NPC
-        int nearbyPlayersCount = (int) plugin.getEntityFromUUID(bardEntityId).getLocation().getWorld().getPlayers().stream()
-                .filter(nearbyPlayer -> nearbyPlayer.getLocation().distance(plugin.getEntityFromUUID(bardEntityId).getLocation()) <= songManager.songPlayRadius)
+        int nearbyPlayersCount = (int) plugin.getEntityFromUUID(player.getWorld(), bardEntityId).getLocation().getWorld().getPlayers().stream()
+                .filter(nearbyPlayer -> nearbyPlayer.getLocation().distance(plugin.getEntityFromUUID(player.getWorld(), bardEntityId).getLocation()) <= songManager.songPlayRadius)
                 .count();
 
         // Check if the song should be skipped based on the majority vote

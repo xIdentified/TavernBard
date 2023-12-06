@@ -76,12 +76,12 @@ public class GUIListener implements Listener {
                             if (canStop) {
                                 songManager.stopCurrentSong(npcId);
                                 player.closeInventory();
-                                plugin.getMessageUtil().sendParsedMessage(player, "<red>Song ended");
+                                plugin.getMessageUtil().sendParsedMessage(player, "&cSong ended");
                             } else {
-                                plugin.getMessageUtil().sendParsedMessage(player, "<red>You can only stop your own songs.");
+                                plugin.getMessageUtil().sendParsedMessage(player, "&cYou can only stop your own songs.");
                             }
                         } else {
-                            plugin.getMessageUtil().sendParsedMessage(player, "<red>No song is currently playing.");
+                            plugin.getMessageUtil().sendParsedMessage(player, "&cNo song is currently playing.");
                         }
                     }
                     default -> plugin.debugLog("Invalid action: " + action);

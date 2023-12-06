@@ -28,20 +28,28 @@ public final class TavernBard extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        // Check if Citizens is enabled
-        if (getServer().getPluginManager().getPlugin("Citizens") == null ||
-                !Objects.requireNonNull(getServer().getPluginManager().getPlugin("Citizens")).isEnabled()) {
-            getLogger().log(Level.SEVERE, "Citizens not found or not enabled");
+        boolean citizensFound = getServer().getPluginManager().isPluginEnabled("Citizens");
+        boolean mythicMobsFound = Bukkit.getPluginManager().isPluginEnabled("MythicMobs");
+
+        // Check if neither Citizens nor MythicMobs is enabled
+        if (!citizensFound && !mythicMobsFound) {
+            getLogger().log(Level.SEVERE, "Neither Citizens nor MythicMobs found. At least one is required for the plugin to work!");
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
 
-        // Check if MythicMobs is enabled
-        if (Bukkit.getPluginManager().isPluginEnabled("MythicMobs")) {
+        // Check if Citizens is enabled and register bard trait
+        if (citizensFound) {
+            // Check if trait is already registered
+            if (CitizensAPI.getTraitFactory().getTrait("bard") == null) {
+                CitizensAPI.getTraitFactory().registerTrait(net.citizensnpcs.api.trait.TraitInfo.create(BardTrait.class).withName("bard"));
+                getLogger().info("Bard trait registered with Citizens.");
+            }
+        }
+
+        if (mythicMobsFound) {
             getServer().getPluginManager().registerEvents(new MythicMobInteractListener(this), this);
             getLogger().info("MythicMobs detected. Support enabled!");
-        } else {
-            getLogger().info("MythicMobs not detected. Initializing without support.");
         }
 
         // Load default config if missing and saved plugin configuration
@@ -53,9 +61,6 @@ public final class TavernBard extends JavaPlugin {
         cooldownManager = new CooldownManager();
         songManager = new SongManager(this);
         QueueManager queueManager = new QueueManager(this, songManager, cooldownManager);
-
-        // Register the bard trait with Citizens.
-        CitizensAPI.getTraitFactory().registerTrait(net.citizensnpcs.api.trait.TraitInfo.create(BardTrait.class));
 
         // Initialize and register listeners
         GUIListener GUIListener = new GUIListener(this, songManager);
@@ -89,15 +94,15 @@ public final class TavernBard extends JavaPlugin {
     }
 
     // Get entity from UUID to check if it's a bard or not
-    public Entity getEntityFromUUID(UUID entityId) {
-        for (World world : getServer().getWorlds()) {
-            Entity entity = world.getEntity(entityId);
-            if (entity != null) {
+    public Entity getEntityFromUUID(World world, UUID uuid) {
+        for (Entity entity : world.getEntities()) {
+            if (entity.getUniqueId().equals(uuid)) {
                 return entity;
             }
         }
         return null;
     }
+
 
     // Plugin shutdown logic
     @Override

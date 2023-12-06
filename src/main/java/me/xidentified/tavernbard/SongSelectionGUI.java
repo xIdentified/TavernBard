@@ -33,8 +33,10 @@ public class SongSelectionGUI implements InventoryHolder {
 
         // Initialize the cached GUI
         String guiTitle = messageUtil().getConfigMessage("gui-title", "<gold>Song Selection");
-        Component titleComponent = messageUtil().parse(guiTitle);
-        this.cachedGUI = Bukkit.getServer().createInventory(this, getInventorySize(songManager.getSongs().size()), titleComponent);
+        // Convert to string for Spigot
+        String titleString = messageUtil().convertToString(guiTitle);
+
+        this.cachedGUI = Bukkit.getServer().createInventory(this, getInventorySize(songManager.getSongs().size()), titleString);
         populateCachedGUI();
     }
 
@@ -50,11 +52,14 @@ public class SongSelectionGUI implements InventoryHolder {
 
     public Inventory getClonedGUIForPlayer() {
         String guiTitle = messageUtil().getConfigMessage("gui-title", "<gold>Song Selection");
-        Component titleComponent = messageUtil().parse(guiTitle);
-        Inventory playerGUI = Bukkit.createInventory(this, cachedGUI.getSize(), titleComponent);
+        // Convert to string for Spigot
+        String titleString = messageUtil().convertToString(guiTitle);
+
+        Inventory playerGUI = Bukkit.createInventory(this, cachedGUI.getSize(), titleString);
         playerGUI.setContents(cachedGUI.getContents().clone());
         return playerGUI;
     }
+
 
     private void populateInventory(Inventory cachedGUI) {
         cachedGUI.clear();
@@ -93,14 +98,12 @@ public class SongSelectionGUI implements InventoryHolder {
             PersistentDataContainer container = songMeta.getPersistentDataContainer();
             container.set(new NamespacedKey(plugin, "songName"), PersistentDataType.STRING, song.getName());
 
-            // Set the song display name for player visibility
-            Component displayNameComponent = messageUtil().parse("<gold>" + song.getDisplayName());
-            songMeta.displayName(displayNameComponent);
+            // Convert Component to String for Spigot servers
+            songMeta.setDisplayName(messageUtil().convertToString("<gold>" + song.getDisplayName()));
 
-            // Add artist credit to the lore
-            List<Component> lore = new ArrayList<>();
-            lore.add(messageUtil().parse("<gray>By " + song.getArtist()));
-            songMeta.lore(lore);
+            List<String> lore = new ArrayList<>();
+            lore.add(messageUtil().convertToString("<gray>By " + song.getArtist()));
+            songMeta.setLore(lore);
 
             // Add custom model data to song items
             if (customModelData != -1) {
@@ -136,13 +139,9 @@ public class SongSelectionGUI implements InventoryHolder {
         ItemStack item = new ItemStack(material);
         ItemMeta meta = item.getItemMeta();
 
-        // Create a Component for the display name
-        Component displayNameComponent = messageUtil().parse(displayName);
+        // Convert Component to String for Spigot servers
+        meta.setDisplayName(messageUtil().convertToString(displayName));
 
-        // Use the Component with the item meta
-        meta.displayName(displayNameComponent);
-
-        // Set metadata for navigation
         PersistentDataContainer container = meta.getPersistentDataContainer();
         container.set(new NamespacedKey(plugin, "action"), PersistentDataType.STRING, action);
 
@@ -163,13 +162,15 @@ public class SongSelectionGUI implements InventoryHolder {
 
         ItemStack item = new ItemStack(Material.NAME_TAG);
         ItemMeta meta = item.getItemMeta();
-        meta.displayName(messageUtil().parse("<gold>Currently Playing"));
 
-        List<Component> lore = new ArrayList<>();
-        lore.add(messageUtil().parse("<yellow>Title: <gray>" + song.getDisplayName()));
-        lore.add(messageUtil().parse("<yellow>Artist: <gray>" + song.getArtist()));
-        lore.add(messageUtil().parse("<yellow>Added by: <gray>" + playerName));
-        meta.lore(lore);
+        // Convert Component to String for Spigot servers
+        meta.setDisplayName(messageUtil().convertToString("<gold>Currently Playing"));
+
+        List<String> lore = new ArrayList<>();
+        lore.add(messageUtil().convertToString("<yellow>Title: <gray>" + song.getDisplayName()));
+        lore.add(messageUtil().convertToString("<yellow>Artist: <gray>" + song.getArtist()));
+        lore.add(messageUtil().convertToString("<yellow>Added by: <gray>" + playerName));
+        meta.setLore(lore);
 
         item.setItemMeta(meta);
         cachedGUI.setItem(slot, item);

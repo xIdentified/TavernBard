@@ -90,13 +90,14 @@ public class SongManager {
         MessageUtil messageUtil = this.plugin.getMessageUtil();
         CooldownManager cooldownManager = this.plugin.getCooldownManager();
         UUID bardNpc = bardNpcs.get(npcId);
+        Object message = selectedSong.getDisplayName();
 
         if (bardNpc == null) {
             plugin.getLogger().severe("Could not retrieve NPC for ID: " + npcId);
             return;
         }
 
-        plugin.debugLog("Attempting to play song: " + selectedSong.getDisplayName() + " for " + songStarter.get(player.getUniqueId()));
+        plugin.debugLog("Attempting to play song: " + message + " for " + songStarter.get(player.getUniqueId()));
 
         // Check if item cost is enabled, return if they can't afford it
         if (!cooldownManager.isOnCooldown(player) && chargePlayer && itemCostManager.isEnabled() && !itemCostManager.canAfford(player)) {
@@ -127,7 +128,7 @@ public class SongManager {
         }
 
         setSongPlaying(npcId, true);
-        Location bardLocation = getEntity(bardNpc).getLocation();
+        Location bardLocation = Objects.requireNonNull(plugin.getEntityFromUUID(player.getWorld(), bardNpc)).getLocation();
         plugin.debugLog("Playing sound reference: " + selectedSong.getSoundReference());
 
         // Play song and show title to players within bard's radius
@@ -135,16 +136,21 @@ public class SongManager {
             if (nearbyPlayer.getLocation().distance(bardLocation) <= songPlayRadius) {
                 nearbyPlayer.playSound(bardLocation, selectedSong.getSoundReference(), 1.0F, 1.0F);
 
-                // Parse song display name
-                Component parsedDisplayNameComponent = messageUtil.parse(selectedSong.getDisplayName());
+                // Use appropriate message format based on server type (Paper or Spigot)
+                if (messageUtil.isPaper()) {
+                    // If Paper, use Components
+                    Component parsedDisplayNameComponent = messageUtil.convertToComponent(selectedSong.getDisplayName());
+                    Component mainTitle = Component.text("");
+                    Component subtitle = Component.text("Now playing: ", NamedTextColor.YELLOW)
+                            .append(parsedDisplayNameComponent);
 
-                // Send the title
-                Component mainTitle = Component.text("");
-                Component subtitle = Component.text("Now playing: ", NamedTextColor.YELLOW)
-                        .append(parsedDisplayNameComponent);
-
-                Title title = Title.title(mainTitle, subtitle);
-                nearbyPlayer.showTitle(title);
+                    Title title = Title.title(mainTitle, subtitle);
+                    nearbyPlayer.showTitle(title);
+                } else {
+                    // If Spigot, use Strings
+                    String parsedDisplayNameString = messageUtil.convertToString(selectedSong.getDisplayName());
+                    nearbyPlayer.sendTitle("", "Now playing: " + parsedDisplayNameString, 10, 70, 20);
+                }
             }
 
             // Set current song
@@ -160,7 +166,7 @@ public class SongManager {
         plugin.debugLog("Sound play attempt completed.");
 
         int taskId = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
-            Entity bardEntity = getEntity(npcId);
+            Entity bardEntity = plugin.getEntityFromUUID(player.getWorld(), npcId);
             if (bardEntity != null) {
                 Location particleLocation = bardEntity.getLocation().add(0, 2.5, 0);
                 bardEntity.getWorld().spawnParticle(Particle.NOTE, particleLocation, 1);
@@ -188,14 +194,19 @@ public class SongManager {
 
             UUID bardNpc = bardNpcs.get(npcId);
             if (bardNpc != null) {
-                for (Player nearbyPlayer : (getEntity(bardNpc)).getLocation().getWorld().getPlayers()) {
-                    if (nearbyPlayer.getLocation().distance(getEntity(bardNpc).getLocation()) <= songPlayRadius) {
-                        nearbyPlayer.stopAllSounds();
+                World world = Bukkit.getServer().getWorlds().get(0);
+                Entity entity = plugin.getEntityFromUUID(world, bardNpc);
+                if (entity instanceof Player bardPlayer) {
+                    for (Player nearbyPlayer : bardPlayer.getWorld().getPlayers()) {
+                        if (nearbyPlayer.getLocation().distance(bardPlayer.getLocation()) <= songPlayRadius) {
+                            nearbyPlayer.stopAllSounds();
+                        }
                     }
-                    SongSelectionGUI gui = getSongSelectionGUIForNPC(npcId);
-                    if (gui != null) {
-                        gui.updateNowPlayingInfo();
-                    }
+                }
+
+                SongSelectionGUI gui = getSongSelectionGUIForNPC(npcId);
+                if (gui != null) {
+                    gui.updateNowPlayingInfo();
                 }
             }
             currentSong.remove(npcId);
@@ -281,8 +292,4 @@ public class SongManager {
         return closestBard;
     }
 
-
-    private Entity getEntity(UUID entityID) {
-        return plugin.getEntityFromUUID(entityID);
-    }
 }
