@@ -1,5 +1,7 @@
 package me.xidentified.tavernbard.managers;
 
+import io.lumine.mythic.bukkit.MythicBukkit;
+import io.lumine.mythic.core.mobs.ActiveMob;
 import me.xidentified.tavernbard.*;
 import me.xidentified.tavernbard.BardTrait;
 import me.xidentified.tavernbard.util.MessageUtil;
@@ -19,7 +21,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class SongManager {
-
     private final TavernBard plugin;
     private final QueueManager queueManager;
     private final EconomyManager economyManager;
@@ -102,7 +103,6 @@ public class SongManager {
             messageUtil.sendParsedMessage(player, "<red>You need " + itemCostManager.getCostAmount() + " " + itemCostManager.formatEnumName(itemCostManager.getCostItem().name()) + "(s) to play a song!");
             return;
         }
-
         // Check if economy is enabled
         if(!cooldownManager.isOnCooldown(player) && chargePlayer && plugin.getConfig().getBoolean("economy.enabled")) {
             double costPerSong = plugin.getConfig().getDouble("economy.cost-per-song");
@@ -115,7 +115,6 @@ public class SongManager {
                 messageUtil.sendParsedMessage(player, "<green>Paid " + costPerSong + " coins to play a song!");
             }
         }
-
         if (!cooldownManager.isOnCooldown(player) && chargePlayer && itemCostManager.isEnabled()) {
             itemCostManager.deductCost(player);
             messageUtil.sendParsedMessage(player, "<green>Charged " + itemCostManager.getCostAmount() + " " + itemCostManager.formatEnumName(itemCostManager.getCostItem().name()) + "(s) to play a song!");
@@ -136,18 +135,19 @@ public class SongManager {
             if (nearbyPlayer.getLocation().distance(bardLocation) <= songPlayRadius) {
                 nearbyPlayer.playSound(bardLocation, selectedSong.getSoundReference(), 1.0F, 1.0F);
 
-                // Parse song display name and artist
+                // Parse song display name
                 Component parsedDisplayNameComponent = messageUtil.parse(selectedSong.getDisplayName());
 
-                // Sending the title
+                // Send the title
                 Component mainTitle = Component.text("");
-                Component subtitle = Component.text("Now playing: ", NamedTextColor.GOLD)
+                Component subtitle = Component.text("Now playing: ", NamedTextColor.YELLOW)
                         .append(parsedDisplayNameComponent);
 
                 Title title = Title.title(mainTitle, subtitle);
                 nearbyPlayer.showTitle(title);
             }
 
+            // Set current song
             currentSong.put(npcId, new Song(selectedSong.getNamespace(), selectedSong.getName(), selectedSong.getDisplayName(), selectedSong.getArtist(), selectedSong.getDuration(), songStarter.get(npcId).getUniqueId()));
 
             // Update now playing info
@@ -157,11 +157,17 @@ public class SongManager {
             }
         }
 
-        plugin.debugLog("Sound play attempt complete");
+        plugin.debugLog("Sound play attempt completed.");
 
-        int taskId = Bukkit.getScheduler().runTaskTimer(plugin,
-                () -> getEntity(bardNpc).getWorld().spawnParticle(Particle.NOTE, getEntity(bardNpc).getLocation().add(0, 2.5, 0), 1),
-                0L, 20L ).getTaskId();
+        int taskId = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+            Entity bardEntity = getEntity(npcId);
+            if (bardEntity != null) {
+                Location particleLocation = bardEntity.getLocation().add(0, 2.5, 0);
+                bardEntity.getWorld().spawnParticle(Particle.NOTE, particleLocation, 1);
+            } else {
+                plugin.debugLog("Entity with UUID " + npcId + " is null when trying to spawn particles.");
+            }
+        }, 0L, 20L).getTaskId();
 
         long songDurationInTicks = selectedSong.getDuration() * 20L;
         currentSongTaskId.put(npcId, taskId);
@@ -186,7 +192,6 @@ public class SongManager {
                     if (nearbyPlayer.getLocation().distance(getEntity(bardNpc).getLocation()) <= songPlayRadius) {
                         nearbyPlayer.stopAllSounds();
                     }
-                    // Assuming you'll adapt songSelectionGUI to be NPC-specific
                     SongSelectionGUI gui = getSongSelectionGUIForNPC(npcId);
                     if (gui != null) {
                         gui.updateNowPlayingInfo();
@@ -235,34 +240,47 @@ public class SongManager {
     }
 
 
-    public UUID getNearestBardNpc(Player player) {
-        double closestDistanceSquared = Double.MAX_VALUE;
-        NPC closestNpc = null;
+    public UUID getNearestBard(Player player, double searchRadius) {
+        double closestDistanceSquared = searchRadius * searchRadius;
+        UUID closestBard = null;
 
-        for (NPC npc : CitizensAPI.getNPCRegistry()) {
-            // Check if the NPC has the bard trait
-            if (!npc.hasTrait(BardTrait.class)) {
-                continue;
+        // Get all entities within the search radius
+        List<Entity> nearbyEntities = player.getNearbyEntities(searchRadius, searchRadius, searchRadius);
+
+        for (Entity entity : nearbyEntities) {
+            // Check for Citizens NPC
+            if (CitizensAPI.getNPCRegistry().isNPC(entity)) {
+                NPC npc = CitizensAPI.getNPCRegistry().getNPC(entity);
+                if (!npc.hasTrait(BardTrait.class)) {
+                    continue;
+                }
             }
+            // Check for MythicMob
+            else if (Bukkit.getPluginManager().isPluginEnabled("MythicMobs")) {
+                if (!MythicBukkit.inst().getAPIHelper().isMythicMob(entity)) {
+                    continue;
+                }
+                ActiveMob activeMob = MythicBukkit.inst().getAPIHelper().getMythicMobInstance(entity);
+                if (!activeMob.getType().getConfig().getBoolean("Options.IsBard")) {
+                    continue;
+                }
+            }
+            // If not an NPC or MythicMob, skip this entity
+            else continue;
 
-            // Calculate the squared distance to avoid unnecessary sqrt calculations
-            double distanceSquared = npc.getEntity().getLocation().distanceSquared(player.getLocation());
+            // Calculate squared distance
+            double distanceSquared = entity.getLocation().distanceSquared(player.getLocation());
 
-            // Update closest NPC if this one is nearer
+            // Update if another entity is closer
             if (distanceSquared < closestDistanceSquared) {
                 closestDistanceSquared = distanceSquared;
-                closestNpc = npc;
+                closestBard = entity.getUniqueId();
             }
         }
 
-        // If no bard NPCs were found, return null
-        if (closestNpc == null) {
-            return null;
-        }
-
-        // Otherwise, return the UUID of the closest bard NPC
-        return closestNpc.getUniqueId();
+        return closestBard;
     }
+
 
     private Entity getEntity(UUID entityID) {
         return plugin.getEntityFromUUID(entityID);

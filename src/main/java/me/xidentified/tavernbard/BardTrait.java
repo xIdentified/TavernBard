@@ -25,9 +25,5 @@ public class BardTrait extends Trait {
         key.setBoolean("isBard", isBard);
     }
 
-    public boolean isBard() {
-        return isBard;
-    }
-
 }
 

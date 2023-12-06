@@ -1,7 +1,8 @@
 package me.xidentified.tavernbard;
 
-import me.xidentified.tavernbard.listeners.BardInteractListener;
+import me.xidentified.tavernbard.listeners.CitizensInteractListener;
 import me.xidentified.tavernbard.listeners.GUIListener;
+import me.xidentified.tavernbard.listeners.MythicMobInteractListener;
 import me.xidentified.tavernbard.listeners.ResourcePackListener;
 import me.xidentified.tavernbard.managers.CooldownManager;
 import me.xidentified.tavernbard.managers.QueueManager;
@@ -11,6 +12,7 @@ import net.citizensnpcs.api.CitizensAPI;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -23,8 +25,6 @@ public final class TavernBard extends JavaPlugin {
     private SongManager songManager;
     private MessageUtil messageUtil;
     private CooldownManager cooldownManager;
-    private BardInteractListener bardInteractListener;
-    private boolean mythicMobsEnabled = false;
 
     @Override
     public void onEnable() {
@@ -37,11 +37,11 @@ public final class TavernBard extends JavaPlugin {
         }
 
         // Check if MythicMobs is enabled
-        if (getServer().getPluginManager().getPlugin("MythicMobs") != null) {
-            getLogger().info("MythicMobs found! Enabling support...");
-            mythicMobsEnabled = true;
+        if (Bukkit.getPluginManager().isPluginEnabled("MythicMobs")) {
+            getServer().getPluginManager().registerEvents(new MythicMobInteractListener(this), this);
+            getLogger().info("MythicMobs detected. Support enabled!");
         } else {
-            getLogger().info("ModelEngine not found. Running without ModelEngine support.");
+            getLogger().info("MythicMobs not detected. Initializing without support.");
         }
 
         // Load default config if missing and saved plugin configuration
@@ -52,7 +52,6 @@ public final class TavernBard extends JavaPlugin {
         this.messageUtil = new MessageUtil(getConfig());
         cooldownManager = new CooldownManager();
         songManager = new SongManager(this);
-        bardInteractListener = new BardInteractListener(this);
         QueueManager queueManager = new QueueManager(this, songManager, cooldownManager);
 
         // Register the bard trait with Citizens.
@@ -65,11 +64,28 @@ public final class TavernBard extends JavaPlugin {
         ResourcePackListener resourcePackListener = new ResourcePackListener(this);
         getServer().getPluginManager().registerEvents(resourcePackListener, this);
 
-        getServer().getPluginManager().registerEvents(bardInteractListener, this);
+        CitizensInteractListener citizensInteractListener = new CitizensInteractListener(this);
+        getServer().getPluginManager().registerEvents(citizensInteractListener, this);
 
         // Register commands
         Objects.requireNonNull(this.getCommand("bard")).setExecutor(new CommandHandler(songManager, queueManager));
 
+    }
+
+    public void handleInteraction(UUID bardEntityId, Player player) {
+        debugLog("handleInteraction method fired");
+
+        SongSelectionGUI gui = new SongSelectionGUI(this, getSongManager(), bardEntityId);
+        player.openInventory(gui.getInventory());
+
+        if (!getSongManager().bardNpcs.containsKey(bardEntityId)) {
+            debugLog("Adding entity with ID: " + bardEntityId);
+            if (bardEntityId != null) {
+                getSongManager().bardNpcs.put(bardEntityId, player.getUniqueId());
+            }
+        } else {
+            debugLog("Entity with ID: " + bardEntityId + " already added.");
+        }
     }
 
     // Get entity from UUID to check if it's a bard or not
@@ -108,10 +124,6 @@ public final class TavernBard extends JavaPlugin {
         return messageUtil;
     }
 
-    public BardInteractListener getBardInteractListener() {
-        return bardInteractListener;
-    }
-
     public CooldownManager getCooldownManager() {
         return cooldownManager;
     }
@@ -120,10 +132,6 @@ public final class TavernBard extends JavaPlugin {
         if (getConfig().getBoolean("debug_mode", false)) {
             getLogger().info("[DEBUG] " + message);
         }
-    }
-
-    public boolean isMythicMobsEnabled() {
-        return mythicMobsEnabled;
     }
 
 }

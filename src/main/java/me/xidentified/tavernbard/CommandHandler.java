@@ -28,7 +28,7 @@ public class CommandHandler implements CommandExecutor {
         }
 
         // Assume a method getNearestBardNpc which returns the closest Bard NPC to a player
-        UUID npcId = songManager.getNearestBardNpc(player);
+        UUID npcId = songManager.getNearestBard(player, 8);
 
         if (npcId == null) {
             sender.sendMessage("§cNo nearby bard NPCs found!");
@@ -60,11 +60,11 @@ public class CommandHandler implements CommandExecutor {
                     return true;
                 }
             } else if (args[0].equalsIgnoreCase("vote")) {
-                if (!songManager.isSongPlaying(npcId)) { // Updated to use NPC ID
+                if (!songManager.isSongPlaying(npcId)) {
                     sender.sendMessage("§cThere are no songs playing to vote against.");
                     return true;
                 }
-                queueManager.voteToSkip(player, npcId); // Updated to use NPC ID
+                queueManager.voteToSkip(player, npcId);
                 return true;
             }
         }

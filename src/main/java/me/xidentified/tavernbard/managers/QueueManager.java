@@ -89,7 +89,7 @@ public class QueueManager {
             resetSkipVotes(bardEntityId);
             Song nextSong = getNextSongFromQueue(bardEntityId);
             if (nextSong != null) {
-                Player songStarter = songManager.getSongStarter(bardEntityId); // Retrieve the player who started the song using bardEntityId
+                Player songStarter = songManager.getSongStarter(bardEntityId);
                 if (songStarter != null) {
                     songManager.playSongForNearbyPlayers(songStarter, bardEntityId, nextSong, true);
                 }
