@@ -9,6 +9,7 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Queue;
+import java.util.UUID;
 
 public class CommandHandler implements CommandExecutor {
     private final SongManager songManager;
@@ -20,7 +21,20 @@ public class CommandHandler implements CommandExecutor {
     }
 
     @Override
-    public boolean onCommand(@NotNull CommandSender sender, Command cmd, @NotNull String label, String[] args) {
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage("§cOnly players can use bard commands.");
+            return true;
+        }
+
+        // Assume a method getNearestBardNpc which returns the closest Bard NPC to a player
+        UUID npcId = songManager.getNearestBard(player, 8);
+
+        if (npcId == null) {
+            sender.sendMessage("§cNo nearby bard NPCs found!");
+            return true;
+        }
+
         if (cmd.getName().equalsIgnoreCase("bard") && args.length > 0) {
             if (args[0].equalsIgnoreCase("reload")) {
                 if (sender.hasPermission("bard.reload")) {
@@ -32,7 +46,7 @@ public class CommandHandler implements CommandExecutor {
                 }
             } else if (args[0].equalsIgnoreCase("queue")) {
                 if (sender.hasPermission("bard.play")) {
-                    Queue<Song> queue = queueManager.getQueueStatus();
+                    Queue<Song> queue = queueManager.getQueueStatus(npcId); // Updated to use NPC ID
                     if (queue.isEmpty()) {
                         sender.sendMessage("§cThere are no songs in the queue.");
                         return true;
@@ -46,14 +60,11 @@ public class CommandHandler implements CommandExecutor {
                     return true;
                 }
             } else if (args[0].equalsIgnoreCase("vote")) {
-                if (!(sender instanceof Player)) {
-                    sender.sendMessage("§cOnly players can vote to skip songs.");
-                    return true;
-                } else if (!songManager.isSongPlaying()) {
+                if (!songManager.isSongPlaying(npcId)) {
                     sender.sendMessage("§cThere are no songs playing to vote against.");
                     return true;
                 }
-                queueManager.voteToSkip((Player) sender);
+                queueManager.voteToSkip(player, npcId);
                 return true;
             }
         }
