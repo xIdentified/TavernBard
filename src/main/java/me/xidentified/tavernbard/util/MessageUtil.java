@@ -4,7 +4,6 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.entity.Player;
 import org.bukkit.ChatColor;
 
 public class MessageUtil {
@@ -33,23 +32,13 @@ public class MessageUtil {
     }
 
     public Component parse(String message) {
-        if (isPaper) {
-            // For Paper, parse the message as a Component
+        if (isPaper()) {
+            // For Paper, parse using MiniMessage
             return miniMessage.deserialize(message);
         } else {
-            // For Spigot, create a simple text Component from the message
-            return Component.text(ChatColor.translateAlternateColorCodes('&', message));
-        }
-    }
-
-    public void sendParsedMessage(Player player, String message) {
-        if (isPaper()) {
-            // If Paper, use Component-based sendMessage
-            player.sendMessage(parse(message));
-        } else {
-            // For Spigot, convert Component to String and use String-based sendMessage
-            String plainMessage = ChatColor.translateAlternateColorCodes('&', message);
-            player.sendMessage(plainMessage);
+            // For Spigot, translate color codes and convert to a Component
+            String translatedMessage = ChatColor.translateAlternateColorCodes('&', message);
+            return Component.text(translatedMessage);
         }
     }
 
@@ -57,24 +46,22 @@ public class MessageUtil {
         return config.getString(path, defaultValue);
     }
 
-    public String convertToString(String message) {
-        if (isPaper) {
-            Component component = parse(message);
-            // Convert Component to String
-            return LegacyComponentSerializer.legacySection().serialize(component);
-        } else {
-            // Directly return the message for Spigot servers
-            return ChatColor.translateAlternateColorCodes('&', message);
-        }
-    }
+    // Trying to get messages to work on both Spigot and Paper servers regardless of how you enter color codes
+    public String convertToUniversalFormat(String message) {
+        Component component;
 
-    public Component convertToComponent(String message) {
-        if (isPaper()) {
-            return parse(message);
-        } else {
-            // For Spigot, convert String to simple text component
-            return Component.text(ChatColor.translateAlternateColorCodes('&', message));
+        // First, try parsing as MiniMessage (handles MiniMessage-style tags)
+        try {
+            component = miniMessage.deserialize(message);
+        } catch (Exception e) {
+            // If parsing fails, assume it's traditional color codes and convert
+            String translatedMessage = ChatColor.translateAlternateColorCodes('&', message);
+            component = Component.text(translatedMessage);
         }
+
+        // Convert the Component to a universally compatible String format
+        String universalString = LegacyComponentSerializer.legacySection().serialize(component);
+        return universalString;
     }
 
 }

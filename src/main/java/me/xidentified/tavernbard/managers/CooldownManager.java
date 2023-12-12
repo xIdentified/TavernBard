@@ -23,7 +23,4 @@ public class CooldownManager {
         return cooldowns.containsKey(player.getUniqueId()) && getTimeLeft(player) > 0;
     }
 
-    public void removeCooldown(Player player) {
-        cooldowns.remove(player.getUniqueId());
-    }
 }

@@ -2,7 +2,6 @@ package me.xidentified.tavernbard;
 
 import me.xidentified.tavernbard.managers.SongManager;
 import me.xidentified.tavernbard.util.MessageUtil;
-import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -34,7 +33,7 @@ public class SongSelectionGUI implements InventoryHolder {
         // Initialize the cached GUI
         String guiTitle = messageUtil().getConfigMessage("gui-title", "<gold>Song Selection");
         // Convert to string for Spigot
-        String titleString = messageUtil().convertToString(guiTitle);
+        String titleString = messageUtil().convertToUniversalFormat(guiTitle);
 
         this.cachedGUI = Bukkit.getServer().createInventory(this, getInventorySize(songManager.getSongs().size()), titleString);
         populateCachedGUI();
@@ -53,7 +52,7 @@ public class SongSelectionGUI implements InventoryHolder {
     public Inventory getClonedGUIForPlayer() {
         String guiTitle = messageUtil().getConfigMessage("gui-title", "<gold>Song Selection");
         // Convert to string for Spigot
-        String titleString = messageUtil().convertToString(guiTitle);
+        String titleString = messageUtil().convertToUniversalFormat(guiTitle);
 
         Inventory playerGUI = Bukkit.createInventory(this, cachedGUI.getSize(), titleString);
         playerGUI.setContents(cachedGUI.getContents().clone());
@@ -99,10 +98,10 @@ public class SongSelectionGUI implements InventoryHolder {
             container.set(new NamespacedKey(plugin, "songName"), PersistentDataType.STRING, song.getName());
 
             // Convert Component to String for Spigot servers
-            songMeta.setDisplayName(messageUtil().convertToString("<gold>" + song.getDisplayName()));
+            songMeta.setDisplayName(messageUtil().convertToUniversalFormat("<gold>" + song.getDisplayName()));
 
             List<String> lore = new ArrayList<>();
-            lore.add(messageUtil().convertToString("<gray>By " + song.getArtist()));
+            lore.add(messageUtil().convertToUniversalFormat("<gray>By " + song.getArtist()));
             songMeta.setLore(lore);
 
             // Add custom model data to song items
@@ -140,7 +139,7 @@ public class SongSelectionGUI implements InventoryHolder {
         ItemMeta meta = item.getItemMeta();
 
         // Convert Component to String for Spigot servers
-        meta.setDisplayName(messageUtil().convertToString(displayName));
+        meta.setDisplayName(messageUtil().convertToUniversalFormat(displayName));
 
         PersistentDataContainer container = meta.getPersistentDataContainer();
         container.set(new NamespacedKey(plugin, "action"), PersistentDataType.STRING, action);
@@ -163,14 +162,14 @@ public class SongSelectionGUI implements InventoryHolder {
         ItemStack item = new ItemStack(Material.NAME_TAG);
         ItemMeta meta = item.getItemMeta();
 
-        // Convert Component to String for Spigot servers
-        meta.setDisplayName(messageUtil().convertToString("<gold>Currently Playing"));
+        meta.setDisplayName(messageUtil().convertToUniversalFormat("<gold>Currently Playing"));
 
         List<String> lore = new ArrayList<>();
-        lore.add(messageUtil().convertToString("<yellow>Title: <gray>" + song.getDisplayName()));
-        lore.add(messageUtil().convertToString("<yellow>Artist: <gray>" + song.getArtist()));
-        lore.add(messageUtil().convertToString("<yellow>Added by: <gray>" + playerName));
+        lore.add(messageUtil().convertToUniversalFormat("<yellow>Title: <gray>" + song.getDisplayName()));
+        lore.add(messageUtil().convertToUniversalFormat("<yellow>Artist: <gray>" + song.getArtist()));
+        lore.add(messageUtil().convertToUniversalFormat("<yellow>Added by: <gray>" + playerName));
         meta.setLore(lore);
+
 
         item.setItemMeta(meta);
         cachedGUI.setItem(slot, item);

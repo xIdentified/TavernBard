@@ -101,7 +101,7 @@ public class SongManager {
 
         // Check if item cost is enabled, return if they can't afford it
         if (!cooldownManager.isOnCooldown(player) && chargePlayer && itemCostManager.isEnabled() && !itemCostManager.canAfford(player)) {
-            messageUtil.sendParsedMessage(player, "<red>You need " + itemCostManager.getCostAmount() + " " + itemCostManager.formatEnumName(itemCostManager.getCostItem().name()) + "(s) to play a song!");
+            player.sendMessage(plugin.getMessageUtil().convertToUniversalFormat("<red>You need " + itemCostManager.getCostAmount() + " " + itemCostManager.formatEnumName(itemCostManager.getCostItem().name()) + "(s) to play a song!"));
             return;
         }
         // Check if economy is enabled
@@ -110,15 +110,15 @@ public class SongManager {
 
             // Check and charge the player
             if(!economyManager.chargePlayer(player, costPerSong)) {
-                messageUtil.sendParsedMessage(player, "<red>You need " + costPerSong + " coins to play a song!");
+                player.sendMessage(plugin.getMessageUtil().convertToUniversalFormat("<red>You need " + costPerSong + " coins to play a song!"));
                 return;
             } else {
-                messageUtil.sendParsedMessage(player, "<green>Paid " + costPerSong + " coins to play a song!");
+                player.sendMessage(plugin.getMessageUtil().convertToUniversalFormat("<green>Paid " + costPerSong + " coins to play a song!"));
             }
         }
         if (!cooldownManager.isOnCooldown(player) && chargePlayer && itemCostManager.isEnabled()) {
             itemCostManager.deductCost(player);
-            messageUtil.sendParsedMessage(player, "<green>Charged " + itemCostManager.getCostAmount() + " " + itemCostManager.formatEnumName(itemCostManager.getCostItem().name()) + "(s) to play a song!");
+            player.sendMessage(plugin.getMessageUtil().convertToUniversalFormat("<green>Charged " + itemCostManager.getCostAmount() + " " + itemCostManager.formatEnumName(itemCostManager.getCostItem().name()) + "(s) to play a song!"));
         }
 
         // If something is already playing, add song to queue
@@ -136,10 +136,12 @@ public class SongManager {
             if (nearbyPlayer.getLocation().distance(bardLocation) <= songPlayRadius) {
                 nearbyPlayer.playSound(bardLocation, selectedSong.getSoundReference(), 1.0F, 1.0F);
 
-                // Use appropriate message format based on server type (Paper or Spigot)
+                // Convert display name to a universally formatted string
+                String universalFormattedString = messageUtil.convertToUniversalFormat(selectedSong.getDisplayName());
+
                 if (messageUtil.isPaper()) {
-                    // If Paper, use Components
-                    Component parsedDisplayNameComponent = messageUtil.convertToComponent(selectedSong.getDisplayName());
+                    // If Paper, parse the string back to a Component for displaying
+                    Component parsedDisplayNameComponent = messageUtil.parse(universalFormattedString);
                     Component mainTitle = Component.text("");
                     Component subtitle = Component.text("Now playing: ", NamedTextColor.YELLOW)
                             .append(parsedDisplayNameComponent);
@@ -147,9 +149,8 @@ public class SongManager {
                     Title title = Title.title(mainTitle, subtitle);
                     nearbyPlayer.showTitle(title);
                 } else {
-                    // If Spigot, use Strings
-                    String parsedDisplayNameString = messageUtil.convertToString(selectedSong.getDisplayName());
-                    nearbyPlayer.sendTitle("", "Now playing: " + parsedDisplayNameString, 10, 70, 20);
+                    // If Spigot, use the universally formatted string directly
+                    nearbyPlayer.sendTitle("", "Now playing: " + universalFormattedString, 10, 70, 20);
                 }
             }
 

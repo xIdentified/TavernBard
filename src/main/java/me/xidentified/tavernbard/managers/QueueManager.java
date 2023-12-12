@@ -34,16 +34,16 @@ public class QueueManager {
 
         if (cooldownManager.isOnCooldown(player)) {
             long timeLeft = TimeUnit.MILLISECONDS.toSeconds(cooldownManager.getTimeLeft(player));
-            messageUtil.sendParsedMessage(player, "<red>You can't add another song for " + timeLeft + " seconds!");
+            player.sendMessage(plugin.getMessageUtil().convertToUniversalFormat("<red>You can't add another song for " + timeLeft + " seconds!"));
             return;
         }
 
         if (npcSongQueues.size() >= MAX_QUEUE_SIZE) {
-            messageUtil.sendParsedMessage(player, "<red>The queue is full! Please wait for a few songs to finish.");
+            player.sendMessage(plugin.getMessageUtil().convertToUniversalFormat("<red>The queue is full! Please wait for a few songs to finish."));
             return;
         }
 
-        player.sendMessage("§aThe song has been added to the queue.");
+        player.sendMessage(plugin.getMessageUtil().convertToUniversalFormat("<red>The song has been added to the queue."));
         npcSongQueues.get(bardEntityId).add(new Song(song.getNamespace(), song.getName(), song.getDisplayName(), song.getArtist(), song.getDuration(), player.getUniqueId()));
         cooldownManager.setCooldown(player);
         plugin.debugLog("Last song added to queue by: " + (song.getAddedByName() != null ? song.getAddedByName() : "NULL"));
@@ -70,7 +70,7 @@ public class QueueManager {
 
         // Check if the player has already voted to skip
         if (playersVotedToSkip.contains(player.getUniqueId())) {
-            messageUtil.sendParsedMessage(player, "<red>You have already voted to skip this song.");
+            player.sendMessage(plugin.getMessageUtil().convertToUniversalFormat("<red>You have already voted to skip this song."));
             return;
         }
 
@@ -94,9 +94,9 @@ public class QueueManager {
                     songManager.playSongForNearbyPlayers(songStarter, bardEntityId, nextSong, true);
                 }
             }
-            messageUtil.sendParsedMessage(player, "<red>The song has been skipped due to majority vote.");
+            player.sendMessage(plugin.getMessageUtil().convertToUniversalFormat("<red>The song has been skipped due to majority vote."));
         } else {
-            messageUtil.sendParsedMessage(player, "<green>You have voted to skip the current song.");
+            player.sendMessage(plugin.getMessageUtil().convertToUniversalFormat("<green>You have voted to skip the current song."));
         }
     }
 
