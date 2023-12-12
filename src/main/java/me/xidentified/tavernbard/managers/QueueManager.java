@@ -10,8 +10,16 @@ import java.util.*;
 
 public class QueueManager {
     private final SongManager songManager;
+<<<<<<< Updated upstream
     private final MessageUtil messageUtil;
     protected final Queue<Song> songQueue = new LinkedList<>();
+=======
+    private final CooldownManager cooldownManager;
+    private final Map<UUID, Queue<Song>> npcSongQueues = new HashMap<>();
+    private final Map<UUID, Set<UUID>> npcPlayersVotedToSkip = new HashMap<>();
+    private final Map<UUID, Integer> npcSkipVotesCount = new HashMap<>();
+    private final TavernBard plugin;
+>>>>>>> Stashed changes
     private final int MAX_QUEUE_SIZE;
     private final Set<UUID> playersVotedToSkip = new HashSet<>();
     private final TavernBard plugin;
@@ -22,7 +30,11 @@ public class QueueManager {
     public QueueManager(TavernBard plugin, SongManager songManager) {
         this.plugin = plugin;
         this.songManager = songManager;
+<<<<<<< Updated upstream
         this.messageUtil = plugin.getMessageUtil();
+=======
+        this.cooldownManager = cooldownManager;
+>>>>>>> Stashed changes
         this.MAX_QUEUE_SIZE = plugin.getConfig().getInt("max-queue-size", 10);
         long COOLDOWN_CLEANUP_PERIOD = 36000L; // 30 mins
         Bukkit.getScheduler().runTaskTimer(plugin, this::cleanupOldCooldowns, COOLDOWN_CLEANUP_PERIOD, COOLDOWN_CLEANUP_PERIOD);
